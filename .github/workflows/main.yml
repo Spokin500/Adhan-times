@@ -26,13 +26,14 @@ jobs:
         with:
           gradle-version: 9.3.1
 
-      # ubuntu-latest'te Android SDK hazır geliyor (ANDROID_HOME). Sadece lisansları
-      # kabul edip projenin istediği platformu (compileSdk 36.1) kuruyoruz.
-      - name: Prepare Android SDK
+      # ubuntu-latest'te Android SDK hazır geliyor. sdkmanager'a hiç dokunmuyoruz:
+      # sadece lisansları kabul edilmiş say, eksik platform/build-tools'u AGP kendisi indirir.
+      - name: Accept Android SDK licenses
         run: |
-          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$SDKM" --licenses > /dev/null || true
-          "$SDKM" "platforms;android-36.1" "build-tools;36.0.0" || "$SDKM" "platforms;android-36" "build-tools;36.0.0"
+          mkdir -p "$ANDROID_HOME/licenses"
+          echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-license"
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       # app/build.gradle.kts, kökte debug.keystore bekliyor ama .gitignore'da olduğu için repoda yok.
       - name: Generate debug keystore
@@ -48,7 +49,7 @@ jobs:
         run: cp .env.example .env
 
       - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace --no-configuration-cache
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -56,4 +57,3 @@ jobs:
           name: adhan-times-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-
