@@ -26,8 +26,13 @@ jobs:
         with:
           gradle-version: 9.3.1
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # ubuntu-latest'te Android SDK hazır geliyor (ANDROID_HOME). Sadece lisansları
+      # kabul edip projenin istediği platformu (compileSdk 36.1) kuruyoruz.
+      - name: Prepare Android SDK
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-36.1" "build-tools;36.0.0" || "$SDKM" "platforms;android-36" "build-tools;36.0.0"
 
       # app/build.gradle.kts, kökte debug.keystore bekliyor ama .gitignore'da olduğu için repoda yok.
       - name: Generate debug keystore
@@ -51,3 +56,4 @@ jobs:
           name: adhan-times-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
